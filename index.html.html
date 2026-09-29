@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pixel Futebol Retrô 90s</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: #111;
+            color: #fff;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 1200px;
+            max-height: 700px;
+            background-color: #000;
+            border: 4px solid #333;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* SCREENS */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #1b1b1b;
+            z-index: 10;
+        }
+
+        .screen.hidden {
+            display: none !important;
+        }
+
+        /* PIXEL TITLE STYLES */
+        h1 {
+            font-size: 3rem;
+            color: #ffe600;
+            text-shadow: 4px 4px #d00000, -3px -3px #000;
+            margin-bottom: 20px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: #55ff55;
+            text-shadow: 2px 2px #000;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            background-color: #2e7d32;
+            color: #fff;
+            border: 4px solid #1b5e20;
+            padding: 12px 28px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 6px #000;
+            transition: all 0.1s ease;
+            text-transform: uppercase;
+        }
+
+        .btn:hover {
+            background-color: #388e3c;
+            transform: translateY(-2px);
+            box-shadow: 0 8px #000;
+        }
+
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px #000;
+        }
+
+        .btn-secondary {
+            background-color: #c62828;
+            border-color: #b71c1c;
+        }
+        .btn-secondary:hover {
+            background-color: #d32f2f;
+        }
+
+        /* SELECTION SCREEN */
+        .selection-box {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            width: 90%;
+            max-width: 800px;
+        }
+
+        .team-select-card {
+            background: #282828;
+            border: 3px solid #444;
+            padding: 20px;
+            border-radius: 8px;
+            flex: 1;
+            min-width: 280px;
+            text-align: center;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            font-size: 1.1rem;
+            background: #111;
+            color: #fff;
+            border: 2px solid #666;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        .roster-preview {
+            margin-top: 15px;
+            font-size: 0.85rem;
+            color: #aaa;
+            text-align: left;
+            max-height: 120px;
+            overflow-y: auto;
+            background: #181818;
+            padding: 8px;
+            border: 1px solid #333;
+        }
+
+        /* CANVAS & HUD */
+        #canvas-wrapper {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            background: #000;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 48px;
+            background: rgba(0, 0, 0, 0.85);
+            border-bottom: 3px solid #ffcc00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            z-index: 5;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .scoreboard {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .team-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        #timer {
+            color: #00ffcc;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+        }
+
+        #pause-btn-top {
+            background: #444;
+            border: 2px solid #666;
+            color: white;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        /* CONTROLS OVERLAY */
+        #touch-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            width: 100%;
+            padding: 0 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            z-index: 6;
+            pointer-events: none;
+        }
+
+        .control-group {
+            pointer-events: auto;
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.65);
+            border: 3px solid #fff;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .btn-action:active, .btn-action.active {
+            background: rgba(255, 204, 0, 0.8);
+            color: #000;
+            transform: scale(0.92);
+        }
+
+        .btn-shoot { border-color: #ff3333; }
+        .btn-pass { border-color: #33ff33; }
+        .btn-through { border-color: #33ffff; }
+        .btn-sprint { border-color: #ffff33; }
+
+        /* GOAL ANNOUNCEMENT BANNER */
+        #goal-banner {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: #e60000;
+            color: #ffee00;
+            border: 6px solid #fff;
+            padding: 20px 50px;
+            font-size: 3rem;
+            font-weight: 900;
+            text-shadow: 4px 4px #000;
+            z-index: 20;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            box-shadow: 0 0 30px rgba(0,0,0,0.9);
+            text-align: center;
+        }
+
+        #goal-banner.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* MODALS */
+        .modal {
+            background: rgba(0,0,0,0.9);
+            border: 4px solid #ffcc00;
+            padding: 30px;
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            border-radius: 8px;
+        }
+
+        /* CAREER TABLE STYLES */
+        .career-table-container {
+            width: 95%;
+            max-width: 900px;
+            max-height: 380px;
+            overflow-y: auto;
+            background: #111;
+            border: 2px solid #444;
+            margin: 15px 0;
+            border-radius: 6px;
+        }
+
+        .career-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .career-table th {
+            background: #222;
+            color: #ffee00;
+            padding: 8px 4px;
+            position: sticky;
+            top: 0;
+            border-bottom: 2px solid #555;
+        }
+
+        .career-table td {
+            padding: 6px 4px;
+            border-bottom: 1px solid #222;
+        }
+
+        .career-table tr:nth-child(even) {
+            background: #181818;
+        }
+
+        .career-table tr.user-row {
+            background: #004488 !important;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .diff-btn {
+            background: #333;
+            border: 2px solid #555;
+            color: #fff;
+            padding: 6px 14px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .diff-btn.active {
+            background: #ffaa00;
+            color: #000;
+            border-color: #fff;
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2rem; }
+            .btn-action { width: 55px; height: 55px; font-size: 0.65rem; }
+            #hud { font-size: 0.9rem; }
+            .career-table { font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+
+        <!-- 1. MAIN MENU SCREEN -->
+        <div id="screen-menu" class="screen">
+            <h1>PIXEL FUTEBOL<br><span style="font-size: 1.8rem; color: #fff;">RETRÔ 90s</span></h1>
+            <p style="color: #aaa; margin-bottom: 25px; text-align: center;">O verdadeiro futebol retro visto de cima!</p>
+            <div>
+                <button id="btn-main-play" class="btn">PARTIDA RÁPIDA</button>
+                <button id="btn-main-career" class="btn" style="background-color: #0055ff; border-color: #0033cc;">MODO CARREIRA</button>
+            </div>
+            <div style="margin-top: 20px; font-size: 0.8rem; color: #777;">Controles: Teclado (WASD/Setas + J,I,O,K,L,H,Shift) ou Touch</div>
+        </div>
+
+        <!-- 2. TEAM SELECTION SCREEN -->
+        <div id="screen-select" class="screen hidden">
+            <h2>ESCOLHA OS TIMES</h2>
+            <div class="selection-box">
+                <!-- PLAYER TEAM -->
+                <div class="team-select-card">
+                    <h3 style="color: #66b3ff;">COM QUEM JOGAR?</h3>
+                    <select id="select-p1-team"></select>
+                    <div id="p1-roster" class="roster-preview"></div>
+                </div>
+
+                <!-- AI TEAM -->
+                <div class="team-select-card" id="ai-team-card">
+                    <h3 style="color: #ff6666;">CONTRA QUEM?</h3>
+                    <select id="select-ai-team"></select>
+                    <div id="ai-roster" class="roster-preview"></div>
+                </div>
+            </div>
+
+            <!-- DIFFICULTY SELECTION -->
+            <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                <label style="color: #ffcc00; font-weight: bold; font-size: 1rem;">Dificuldade: </label>
+                <button class="diff-btn" data-diff="EASY">FÁCIL</button>
+                <button class="diff-btn active" data-diff="MEDIUM">MÉDIO</button>
+                <button class="diff-btn" data-diff="HARD">DIFÍCIL</button>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="color: #ccc; font-size: 1rem;">Duração da Partida: </label>
+                <select id="select-duration" style="width: auto; display: inline-block;">
+                    <option value="2">2 Minutos</option>
+                    <option value="5" selected>5 Minutos</option>
+                    <option value="10">10 Minutos</option>
+                    <option value="15">15 Minutos</option>
+                </select>
+            </div>
+
+            <div>
+                <button id="btn-start-match" class="btn">COMEÇAR PARTIDA</button>
+                <button id="btn-back-menu" class="btn btn-secondary">VOLTAR</button>
+            </div>
+        </div>
+
+        <!-- CAREER MODE LEAGUE TABLE SCREEN -->
+        <div id="screen-career" class="screen hidden">
+            <h2 style="color: #00ccff; margin-bottom: 5px;">BRASILEIRÃO SÉRIE A</h2>
+            <div id="career-round-title" style="color: #fff; font-size: 1.1rem; margin-bottom: 10px;">Rodada 1 de 38</div>
+
+            <div class="career-table-container">
+                <table class="career-table">
+                    <thead>
+                        <tr>
+                            <th>POS</th>
+                            <th style="text-align: left; padding-left: 10px;">CLUBE</th>
+                            <th>P</th>
+                            <th>J</th>
+                            <th>V</th>
+                            <th>E</th>
+                            <th>D</th>
+                            <th>GP</th>
+                            <th>GC</th>
+                            <th>SG</th>
+                        </tr>
+                    </thead>
+                    <tbody id="career-table-body"></tbody>
+                </table>
+            </div>
+
+            <div id="career-next-match-box" style="background: #222; border: 2px solid #ffee00; padding: 10px 20px; border-radius: 6px; text-align: center; margin-bottom: 10px;">
+                <span style="color: #aaa; font-size: 0.9rem;">PRÓXIMO CONFRONTO:</span><br>
+                <span id="career-next-match-text" style="color: #fff; font-size: 1.2rem; font-weight: bold;">SEU TIME × ADVERSÁRIO</span>
+            </div>
+
+            <div>
+                <button id="btn-career-play" class="btn" style="background-color: #00aa00;">JOGAR PARTIDA</button>
+                <button id="btn-career-reset" class="btn btn-secondary">NOVA CARREIRA</button>
+                <button id="btn-career-menu" class="btn btn-secondary">MENU PRINCIPAL</button>
+            </div>
+        </div>
+
+        <!-- 3. GAME SCREEN -->
+        <div id="screen-game" class="screen hidden" style="padding: 0; background: #000;">
+            <div id="hud">
+                <div class="scoreboard">
+                    <span id="hud-p1-name" class="team-badge" style="background:#0055ff;">MEU TIME</span>
+                    <span id="hud-score" style="font-size: 1.4rem; color: #ffee00;">0 × 0</span>
+                    <span id="hud-ai-name" class="team-badge" style="background:#cc0000;">ADVERSÁRIO</span>
+                </div>
+                <div id="timer">00:00</div>
+                <button id="pause-btn-top">PAUSA [P]</button>
+            </div>
+
+            <div id="canvas-wrapper">
+                <canvas id="gameCanvas"></canvas>
+                <div id="goal-banner">GOL!</div>
+            </div>
+
+            <!-- ON-SCREEN TOUCH / MOUSE BUTTONS -->
+            <div id="touch-controls">
+                <div class="control-group" id="dpad-group" style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; justify-content: center;">
+                        <div class="btn-action" id="btn-up" style="width: 45px; height: 45px;">▲</div>
+                    </div>
+                    <div style="display: flex; gap: 4px;">
+                        <div class="btn-action" id="btn-left" style="width: 45px; height: 45px;">◄</div>
+                        <div class="btn-action" id="btn-down" style="width: 45px; height: 45px;">▼</div>
+                        <div class="btn-action" id="btn-right" style="width: 45px; height: 45px;">►</div>
+                    </div>
+                </div>
+
+                <div class="control-group" id="action-buttons-group"></div>
+            </div>
+        </div>
+
+        <!-- 4. PAUSE MODAL -->
+        <div id="modal-pause" class="screen hidden" style="background: rgba(0,0,0,0.85); z-index: 30;">
+            <div class="modal">
+                <h2>PARTIDA PAUSADA</h2>
+                <div style="margin: 20px 0;">
+                    <button id="btn-resume" class="btn" style="width: 100%;">CONTINUAR</button>
+                    <button id="btn-restart" class="btn" style="width: 100%;">REINICIAR</button>
+                    <button id="btn-exit-select" class="btn btn-secondary" style="width: 100%;">ESCOLHER TIMES</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. GAME OVER MODAL -->
+        <div id="modal-gameover" class="screen hidden" style="background: rgba(0,0,0,0.9); z-index: 35;">
+            <div class="modal">
+                <h1 id="gameover-title" style="font-size: 2.2rem;">FIM DE JOGO!</h1>
+                <h2 id="gameover-score" style="color: #ffee00; font-size: 2.5rem; margin: 15px 0;">0 × 0</h2>
+                <p id="gameover-winner" style="color: #fff; font-size: 1.2rem; margin-bottom: 25px;"></p>
+                <button id="btn-play-again" class="btn">JOGAR NOVAMENTE</button>
+                <button id="btn-over-teams" class="btn btn-secondary">MENU DE TIMES</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- RETRO SOUND SYNTHESIZER ---
+        const AudioSys = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+            },
+            playKick() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(120, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.12);
+                gain.gain.setValueAtTime(1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.12);
+            },
+            playWhistle() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(2400, this.ctx.currentTime);
+                osc.frequency.setValueAtTime(2800, this.ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.25);
+            },
+            playGoal() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                [440, 554.37, 659.25, 880].forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.1 + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.1);
+                    osc.stop(now + idx * 0.1 + 0.3);
+                });
+            }
+        };
+
+        // --- TEAM DATABASE (20 TEAMS - BRASILEIRÃO SÉRIE A) ---
+        const TEAMS_DATA = [
+            { id: 'philamengo', name: 'Philamengo', short: 'PHI', shirtColor: '#cc0000', shortsColor: '#111111', roster: ['01. Rosi (GK)', '02. Vagner (ZAG)', '03. Léo Ortis (ZAG)', '04. Fabrício (ZAG)', '05. Ayrton (ZAG)', '06. Pulgaro (MC)', '07. De Arrasca (MC)', '08. Gerson (MC)', '09. De La Cruz (MC)', '10. Gabigolo (ATA)', '11. Pedroso (ATA)'] },
+            { id: 'corinthianso', name: 'Corinthianso', short: 'COR', shirtColor: '#f0f0f0', shortsColor: '#000000', roster: ['01. Hugão (GK)', '02. Fagnero (ZAG)', '03. Ramalho (ZAG)', '04. Gustagol (ZAG)', '05. Bidu (ZAG)', '06. Raniele (MC)', '07. Garro (MC)', '08. Martinez (MC)', '09. Coronado (MC)', '10. Depay (ATA)', '11. Yuri Alvez (ATA)'] },
+            { id: 'palmirense', name: 'Palmirense', short: 'PAL', shirtColor: '#007a29', shortsColor: '#ffffff', roster: ['01. Wever (GK)', '02. Rocha (ZAG)', '03. Gomez (ZAG)', '04. Murilo (ZAG)', '05. Piquerez (ZAG)', '06. Anibal (MC)', '07. Rios (MC)', '08. Veiga (MC)', '09. Maurício (MC)', '10. Estevinho (ATA)', '11. Flaco (ATA)'] },
+            { id: 'santus', name: 'Santus', short: 'SAN', shirtColor: '#ffffff', shortsColor: '#ffffff', roster: ['01. Brazão (GK)', '02. Chermont (ZAG)', '03. Gilso (ZAG)', '04. Joaquim (ZAG)', '05. Escobar (ZAG)', '06. Pituca (MC)', '07. Schmidt (MC)', '08. Giuliano (MC)', '09. Cazares (MC)', '10. Guilherme (ATA)', '11. Furch (ATA)'] },
+            { id: 'saopaulino', name: 'Sao Paulino', short: 'SPO', shirtColor: '#ffffff', shortsColor: '#111111', roster: ['01. Rafael (GK)', '02. Rafinha (ZAG)', '03. Arboleda (ZAG)', '04. Beraldo (ZAG)', '05. Welington (ZAG)', '06. Alisson (MC)', '07. Bobadilla (MC)', '08. Lucas (MC)', '09. Rato (MC)', '10. Luciano (ATA)', '11. Calleri (ATA)'] },
+            { id: 'gremioz', name: 'Gremioz', short: 'GRE', shirtColor: '#0077cc', shortsColor: '#ffffff', roster: ['01. Marchesin (GK)', '02. Joao Pedro (ZAG)', '03. Geromel (ZAG)', '04. Kannemann (ZAG)', '05. Reinaldo (ZAG)', '06. Dodi (MC)', '07. Villasanti (MC)', '08. Cristaldo (MC)', '09. Monsalve (MC)', '10. Soteldo (ATA)', '11. Braith (ATA)'] },
+            { id: 'internacionali', name: 'Internacionali', short: 'INT', shirtColor: '#d60000', shortsColor: '#ffffff', roster: ['01. Rochet (GK)', '02. Bustos (ZAG)', '03. Vitao (ZAG)', '04. Mercado (ZAG)', '05. Bernabei (ZAG)', '06. Fernando (MC)', '07. Maia (MC)', '08. Alan Pa (MC)', '09. Tabata (MC)', '10. Valencia (ATA)', '11. Borre (ATA)'] },
+            { id: 'atleticomineirao', name: 'Atletico Mineirao', short: 'CAM', shirtColor: '#222222', shortsColor: '#ffffff', roster: ['01. Everson (GK)', '02. Saravia (ZAG)', '03. Fuchs (ZAG)', '04. Junior (ZAG)', '05. Arana (ZAG)', '06. Otavio (MC)', '07. Vera (MC)', '08. Scarpa (MC)', '09. Zaracho (MC)', '10. Paulinho (ATA)', '11. Hulkus (ATA)'] },
+            { id: 'cruzeirao', name: 'Cruzeirao', short: 'CRU', shirtColor: '#0044ff', shortsColor: '#ffffff', roster: ['01. Cássio (GK)', '02. William (ZAG)', '03. Zé Ivaldo (ZAG)', '04. Villalba (ZAG)', '05. Marlon (ZAG)', '06. Lucas R. (MC)', '07. Romero (MC)', '08. Matheus P. (MC)', '09. Barreal (MC)', '10. Lautaro (ATA)', '11. Dinenno (ATA)'] },
+            { id: 'botafogoretro', name: 'Botafogo Retro', short: 'BOT', shirtColor: '#1a1a1a', shortsColor: '#ffffff', roster: ['01. John (GK)', '02. Vitinho (ZAG)', '03. Bastos (ZAG)', '04. Barboza (ZAG)', '05. Alex T. (ZAG)', '06. Gregore (MC)', '07. Marlon F. (MC)', '08. Almada (MC)', '09. Luiz H. (MC)', '10. Savarino (ATA)', '11. Igor J. (ATA)'] },
+            { id: 'fluminenso', name: 'Fluminenso', short: 'FLU', shirtColor: '#80002a', shortsColor: '#ffffff', roster: ['01. Fabio (GK)', '02. Samuel X. (ZAG)', '03. Thiago S. (ZAG)', '04. Thiago S. (ZAG)', '05. Marcelo (ZAG)', '06. Martinelli (MC)', '07. André (MC)', '08. Ganso (MC)', '09. Arias (MC)', '10. Serna (ATA)', '11. Cano (ATA)'] },
+            { id: 'vascopixel', name: 'Vasco da Gama Pixel', short: 'VAS', shirtColor: '#111111', shortsColor: '#111111', roster: ['01. Léo J. (GK)', '02. Paulo H. (ZAG)', '03. Maicon (ZAG)', '04. Léo P. (ZAG)', '05. Lucas P. (ZAG)', '06. Hugo M. (MC)', '07. Sforza (MC)', '08. Payet (MC)', '09. Coutinho (MC)', '10. Emerson R. (ATA)', '11. Vegetti (ATA)'] },
+            { id: 'bahiacity', name: 'Bahia City', short: 'BAH', shirtColor: '#0055dd', shortsColor: '#ffffff', roster: ['01. Marcos F. (GK)', '02. Arias (ZAG)', '03. Gabriel X. (ZAG)', '04. Kanu (ZAG)', '05. Juba (ZAG)', '06. Caio A. (MC)', '07. Jean L. (MC)', '08. Everton R. (MC)', '09. Cauly (MC)', '10. Biel (ATA)', '11. Thaciano (ATA)'] },
+            { id: 'fortalezatricolor', name: 'Fortaleza Tricolor', short: 'FOR', shirtColor: '#b3001b', shortsColor: '#0033aa', roster: ['01. Joao R. (GK)', '02. Tinga (ZAG)', '03. Britez (ZAG)', '04. Titi (ZAG)', '05. Pacheco (ZAG)', '06. Hércules (MC)', '07. Zé Wel. (MC)', '08. Pochettino (MC)', '09. Yago P. (MC)', '10. Lucero (ATA)', '11. Breno L. (ATA)'] },
+            { id: 'athleticopixel', name: 'Athletico Paranaense', short: 'CAP', shirtColor: '#990000', shortsColor: '#000000', roster: ['01. Bento (GK)', '02. Madson (ZAG)', '03. Thiago H. (ZAG)', '04. Gamarra (ZAG)', '05. Esquivel (ZAG)', '06. Fernandinho (MC)', '07. Erick (MC)', '08. Zapelli (MC)', '09. Canobbio (MC)', '10. Cuello (ATA)', '11. Mastriani (ATA)'] },
+            { id: 'redbullpixel', name: 'Bragantino Pixel', short: 'RBB', shirtColor: '#ffffff', shortsColor: '#000000', roster: ['01. Cleiton (GK)', '02. Andres H. (ZAG)', '03. Pedro H. (ZAG)', '04. Eduardo (ZAG)', '05. Capixaba (ZAG)', '06. Jadsom (MC)', '07. Lucas E. (MC)', '08. Lincoln (MC)', '09. Mosquera (MC)', '10. Sasha (ATA)', '11. Borbas (ATA)'] },
+            { id: 'juventuderetro', name: 'Juventude Retro', short: 'JUV', shirtColor: '#00802b', shortsColor: '#ffffff', roster: ['01. Gabriel (GK)', '02. Ewerthon (ZAG)', '03. Danilo B. (ZAG)', '04. Zé Marcos (ZAG)', '05. Alan R. (ZAG)', '06. Jadson (MC)', '07. Oyama (MC)', '08. Jean C. (MC)', '09. Lucas B. (MC)', '10. Erick F. (ATA)', '11. Gilberto (ATA)'] },
+            { id: 'cuiabapixel', name: 'Cuiaba Pixel', short: 'CUI', shirtColor: '#00552b', shortsColor: '#ffcc00', roster: ['01. Walter (GK)', '02. Matheus A. (ZAG)', '03. Marllon (ZAG)', '04. Empereur (ZAG)', '05. Ramon (ZAG)', '06. Lucas M. (MC)', '07. Denilson (MC)', '08. Max (MC)', '09. Derik (MC)', '10. Clayson (ATA)', '11. Pitta (ATA)'] },
+            { id: 'criciumaretro', name: 'Criciuma Retro', short: 'CRI', shirtColor: '#e6b800', shortsColor: '#000000', roster: ['01. Gustavo (GK)', '02. Claudinho (ZAG)', '03. Rodrigo (ZAG)', '04. Wilker (ZAG)', '05. Trauco (ZAG)', '06. Barreto (MC)', '07. Newton (MC)', '08. Matheusinho (MC)', '09. Fellipe M. (MC)', '10. Allano (ATA)', '11. Bolasie (ATA)'] },
+            { id: 'goiaspixel', name: 'Goias Pixel', short: 'GOI', shirtColor: '#004d26', shortsColor: '#ffffff', roster: ['01. Tadeu (GK)', '02. Diego (ZAG)', '03. Messias (ZAG)', '04. Reynaldo (ZAG)', '05. Sander (ZAG)', '06. Wellington (MC)', '07. Marcão (MC)', '08. Juninho (MC)', '09. Wellinton (MC)', '10. Thiago G. (ATA)', '11. Edu (ATA)'] }
+        ];
+
+        // --- DIFFICULTY SETTINGS ---
+        let currentDifficulty = 'MEDIUM';
+        const DIFFICULTY_CONFIG = {
+            EASY:   { aiSpeed: 1.3, pressRadius: 100, shootMin: 8,  shootMax: 11, tackleChance: 0.01 },
+            MEDIUM: { aiSpeed: 1.7, pressRadius: 170, shootMin: 11, shootMax: 14, tackleChance: 0.03 },
+            HARD:   { aiSpeed: 2.1, pressRadius: 280, shootMin: 13, shootMax: 16, tackleChance: 0.06 }
+        };
+
+        // --- CAREER MODE ENGINE ---
+        let isCareerMode = false;
+        let careerCurrentRound = 1;
+        let careerUserTeamId = null;
+        let careerTable = [];
+        let careerFixtures = [];
+
+        // --- PITCH CONSTANTS ---
+        const PITCH = {
+            width: 1000,
+            height: 600,
+            padding: 40,
+            goalHeight: 140
+        };
+
+        let canvas, ctx;
+        let p1TeamData, aiTeamData;
+        let matchDurationMinutes = 5;
+        let matchTimeRemaining = 300;
+        let p1Score = 0;
+        let aiScore = 0;
+        let gameState = 'MENU';
+        let goalTimer = 0;
+        let matchTimerInterval = null;
+
+        // Entities
+        let ball = null;
+        let p1Players = [];
+        let aiPlayers = [];
+        let controlledPlayer = null;
+
+        // Input state
+        const keys = {};
+        const touchInput = {
+            up: false, down: false, left: false, right: false,
+            shoot: false, pass: false, through: false, sprint: false,
+            tackle: false, slide: false, pressure: false
+        };
+
+        let shootPower = 0;
+        let isChargingShoot = false;
+        let highPressureTimer = 0;
+
+        class Ball {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = 0;
+                this.vy = 0;
+                this.radius = 5;
+                this.owner = null;
+                this.kicker = null;
+                this.kickCooldown = 0;
+            }
+
+            update() {
+                if (this.kickCooldown > 0) this.kickCooldown--;
+
+                if (this.owner) {
+                    this.x = this.owner.x + Math.cos(this.owner.angle) * 8;
+                    this.y = this.owner.y + Math.sin(this.owner.angle) * 8;
+                    this.vx = 0;
+                    this.vy = 0;
+                } else {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    this.vx *= 0.96;
+                    this.vy *= 0.96;
+
+                    // Pitch bounds & Goal detection
+                    const goalTop = (PITCH.height - PITCH.goalHeight) / 2;
+                    const goalBottom = goalTop + PITCH.goalHeight;
+
+                    // Left Goal (Player Goal - AI Scores)
+                    if (this.x < PITCH.padding - 5) {
+                        if (this.y >= goalTop && this.y <= goalBottom) {
+                            aiScore++;
+                            updateHUD();
+                            triggerGoal("GOL DO ADVERSÁRIO!");
+                        } else {
+                            this.x = PITCH.padding - 5;
+                            this.vx = -this.vx * 0.5;
+                        }
+                    }
+
+                    // Right Goal (AI Goal - Player Scores)
+                    if (this.x > PITCH.width - PITCH.padding + 5) {
+                        if (this.y >= goalTop && this.y <= goalBottom) {
+                            p1Score++;
+                            updateHUD();
+                            triggerGoal("GOL DO SEU TIME!");
+                        } else {
+                            this.x = PITCH.width - PITCH.padding + 5;
+                            this.vx = -this.vx * 0.5;
+                        }
+                    }
+
+                    // Top and Bottom pitch lines
+                    if (this.y < PITCH.padding + this.radius) {
+                        this.y = PITCH.padding + this.radius;
+                        this.vy = -this.vy * 0.5;
+                    }
+                    if (this.y > PITCH.height - PITCH.padding - this.radius) {
+                        this.y = PITCH.height - PITCH.padding - this.radius;
+                        this.vy = -this.vy * 0.5;
+                    }
+                }
+            }
+
+            draw(ctx) {
+                // Ball Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.ellipse(this.x, this.y + 4, this.radius, this.radius / 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Ball Body
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+
+        class Player {
+            constructor(team, role, baseXRatio, baseYRatio, number, name) {
+                this.team = team;
+                this.role = role;
+                this.baseXRatio = baseXRatio;
+                this.baseYRatio = baseYRatio;
+                this.number = number;
+                this.name = name;
+
+                const usableWidth = PITCH.width - (PITCH.padding * 2);
+                const usableHeight = PITCH.height - (PITCH.padding * 2);
+
+                if (team === 'P1') {
+                    this.baseX = PITCH.padding + (baseXRatio * usableWidth);
+                } else {
+                    this.baseX = PITCH.width - (PITCH.padding + (baseXRatio * usableWidth));
+                }
+                this.baseY = PITCH.padding + (baseYRatio * usableHeight);
+
+                this.x = this.baseX;
+                this.y = this.baseY;
+                this.vx = 0;
+                this.vy = 0;
+                this.radius = 9;
+                this.speed = 2.2;
+                this.sprintSpeed = 3.2;
+                this.angle = 0;
+
+                this.isSliding = false;
+                this.slideTimer = 0;
+                this.slideCooldown = 0;
+                this.slideDir = { x: 0, y: 0 };
+            }
+
+            update() {
+                if (this.slideCooldown > 0) this.slideCooldown--;
+
+                if (this.isSliding) {
+                    this.slideTimer--;
+                    this.x += this.slideDir.x * 4.5;
+                    this.y += this.slideDir.y * 4.5;
+                    if (this.slideTimer <= 0) {
+                        this.isSliding = false;
+                    }
+                } else if (this.team === 'AI' || (this.team === 'P1' && this !== controlledPlayer)) {
+                    this.updateAI();
+                }
+
+                // Apply velocities
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vx *= 0.8;
+                this.vy *= 0.8;
+
+                // Pitch boundaries clamp
+                this.x = Math.max(PITCH.padding + 5, Math.min(PITCH.width - PITCH.padding - 5, this.x));
+                this.y = Math.max(PITCH.padding + 5, Math.min(PITCH.height - PITCH.padding - 5, this.y));
+
+                // Direction angle update
+                if (Math.hypot(this.vx, this.vy) > 0.1) {
+                    this.angle = Math.atan2(this.vy, this.vx);
+                }
+            }
+
+            updateAI() {
+                if (!ball) return;
+                const hasBall = ball.owner === this;
+                const teamHasBall = ball.owner && ball.owner.team === this.team;
+                const targetGoalX = this.team === 'P1' ? PITCH.width - PITCH.padding : PITCH.padding;
+                const ownGoalX = this.team === 'P1' ? PITCH.padding : PITCH.width - PITCH.padding;
+
+                let targetX = this.baseX;
+                let targetY = this.baseY;
+
+                const diff = DIFFICULTY_CONFIG[currentDifficulty];
+
+                if (this.role === 'GK') {
+                    targetX = ownGoalX + (this.team === 'P1' ? 25 : -25);
+                    targetY = Math.max(PITCH.height / 2 - 50, Math.min(PITCH.height / 2 + 50, ball.y));
+
+                    const distToBall = Math.hypot(ball.x - this.x, ball.y - this.y);
+                    if (distToBall < 65 && !ball.owner) {
+                        targetX = ball.x;
+                        targetY = ball.y;
+                    } else if (hasBall) {
+                        this.passToTeammate(false);
+                    }
+                } else if (hasBall) {
+                    targetX = targetGoalX;
+                    targetY = PITCH.height / 2 + (this.baseYRatio - 0.5) * 150;
+
+                    const distToGoal = Math.abs(targetGoalX - this.x);
+                    if (distToGoal < 240) {
+                        const goalTop = (PITCH.height - PITCH.goalHeight) / 2;
+                        const goalBottom = goalTop + PITCH.goalHeight;
+                        const targetY = Math.random() < 0.5 ? goalTop + 18 : goalBottom - 18;
+                        this.shootTowards(targetGoalX, targetY, diff.shootMin + Math.random() * (diff.shootMax - diff.shootMin));
+                        return;
+                    }
+
+                    if (Math.random() < 0.02) {
+                        this.passToTeammate(Math.random() < 0.4);
+                    }
+                } else if (teamHasBall) {
+                    const shiftX = (ball.x - PITCH.width / 2) * 0.4;
+                    targetX = this.baseX + shiftX;
+                    targetY = this.baseY;
+                } else {
+                    const distToBall = Math.hypot(ball.x - this.x, ball.y - this.y);
+                    const isAttackerPressing = (this.role === 'ATT' || this.role === 'MID') && (distToBall < diff.pressRadius);
+                    const isHighPressing = (this.team === 'P1' && highPressureTimer > 0) || isAttackerPressing;
+
+                    if (distToBall < diff.pressRadius || isHighPressing) {
+                        targetX = ball.x;
+                        targetY = ball.y;
+                    } else {
+                        targetX = this.baseX + (ball.x - PITCH.width / 2) * 0.3;
+                    }
+
+                    if (distToBall < 16 && ball.owner && ball.owner.team !== this.team) {
+                        if (Math.random() < diff.tackleChance || isAttackerPressing) {
+                            this.tackle();
+                        }
+                    }
+                }
+
+                const dx = targetX - this.x;
+                const dy = targetY - this.y;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist > 5) {
+                    const moveSpeed = (this.team === 'AI') ? diff.aiSpeed : this.speed;
+                    const targetVx = (dx / dist) * moveSpeed;
+                    const targetVy = (dy / dist) * moveSpeed;
+                    this.vx += (targetVx - this.vx) * 0.35;
+                    this.vy += (targetVy - this.vy) * 0.35;
+                }
+            }
+
+            shootTowards(tx, ty, power) {
+                if (!ball || ball.owner !== this) return;
+                ball.kicker = this;
+                ball.kickCooldown = 15;
+                ball.owner = null;
+                const angle = Math.atan2(ty - this.y, tx - this.x);
+                ball.vx = Math.cos(angle) * power;
+                ball.vy = Math.sin(angle) * power;
+                AudioSys.playKick();
+            }
+
+            passToTeammate(isThroughPass = false) {
+                if (!ball || ball.owner !== this) return;
+
+                const teammates = (this.team === 'P1' ? p1Players : aiPlayers).filter(p => p !== this);
+                let bestTarget = null;
+                let bestScore = -9999;
+
+                teammates.forEach(p => {
+                    const dx = p.x - this.x;
+                    const isForward = this.team === 'P1' ? dx > 0 : dx < 0;
+                    const dist = Math.hypot(p.x - this.x, p.y - this.y);
+
+                    let score = -dist;
+                    if (isThroughPass && isForward) score += 200;
+                    if (!isThroughPass && dist < 250) score += 100;
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestTarget = p;
+                    }
+                });
+
+                if (bestTarget) {
+                    ball.kicker = this;
+                    ball.kickCooldown = 12;
+                    ball.owner = null;
+                    let targetX = bestTarget.x;
+                    let targetY = bestTarget.y;
+
+                    if (isThroughPass) {
+                        targetX += (this.team === 'P1' ? 60 : -60);
+                    }
+
+                    const angle = Math.atan2(targetY - this.y, targetX - this.x);
+                    const power = isThroughPass ? 8.5 : 6.5;
+                    ball.vx = Math.cos(angle) * power;
+                    ball.vy = Math.sin(angle) * power;
+
+                    if (this.team === 'P1') {
+                        controlledPlayer = bestTarget;
+                    }
+                    AudioSys.playKick();
+                }
+            }
+
+            tackle() {
+                if (!ball) return;
+                const dist = Math.hypot(ball.x - this.x, ball.y - this.y);
+                if (dist < 22) {
+                    ball.owner = this;
+                    if (this.team === 'P1') controlledPlayer = this;
+                    AudioSys.playKick();
+                }
+            }
+
+            performSlide() {
+                if (!ball || this.slideCooldown > 0 || this.isSliding) return;
+                this.isSliding = true;
+                this.slideTimer = 18;
+                this.slideCooldown = 90;
+
+                const moveAngle = (this.vx !== 0 || this.vy !== 0) ? Math.atan2(this.vy, this.vx) : this.angle;
+                this.slideDir = { x: Math.cos(moveAngle), y: Math.sin(moveAngle) };
+
+                const dist = Math.hypot(ball.x - this.x, ball.y - this.y);
+                if (dist < 30) {
+                    ball.owner = this;
+                    ball.vx = this.slideDir.x * 4;
+                    ball.vy = this.slideDir.y * 4;
+                    AudioSys.playKick();
+                }
+            }
+
+            draw(ctx) {
+                // Shadow
+                ctx.fillStyle = 'rgba(0,0,0,0.25)';
+                ctx.beginPath();
+                ctx.ellipse(this.x, this.y + 7, this.radius, this.radius / 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Player Body
+                ctx.fillStyle = this.team === 'P1' ? p1TeamData.shirtColor : aiTeamData.shirtColor;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Shorts
+                ctx.fillStyle = this.team === 'P1' ? p1TeamData.shortsColor : aiTeamData.shortsColor;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius - 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Direction Indicator
+                ctx.fillStyle = '#ffcc99';
+                ctx.beginPath();
+                ctx.arc(
+                    this.x + Math.cos(this.angle) * 5,
+                    this.y + Math.sin(this.angle) * 5,
+                    3, 0, Math.PI * 2
+                );
+                ctx.fill();
+
+                // Controlled Marker
+                if (this === controlledPlayer && gameState === 'PLAYING') {
+                    ctx.fillStyle = '#ffee00';
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y - 20);
+                    ctx.lineTo(this.x - 6, this.y - 28);
+                    ctx.lineTo(this.x + 6, this.y - 28);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+
+                // Number
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '8px monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.number, this.x, this.y);
+            }
+        }
+
+        function createTeamPlayers(teamCode) {
+            const teamData = teamCode === 'P1' ? p1TeamData : aiTeamData;
+            const players = [];
+
+            // 1-4-4-2 Formation layout
+            const formation = [
+                { role: 'GK',  x: 0.04, y: 0.50, num: 1 },
+                { role: 'DEF', x: 0.18, y: 0.18, num: 2 },
+                { role: 'DEF', x: 0.16, y: 0.38, num: 3 },
+                { role: 'DEF', x: 0.16, y: 0.62, num: 4 },
+                { role: 'DEF', x: 0.18, y: 0.82, num: 5 },
+                { role: 'MID', x: 0.35, y: 0.20, num: 6 },
+                { role: 'MID', x: 0.32, y: 0.40, num: 7 },
+                { role: 'MID', x: 0.32, y: 0.60, num: 8 },
+                { role: 'MID', x: 0.35, y: 0.80, num: 9 },
+                { role: 'ATT', x: 0.46, y: 0.38, num: 10 },
+                { role: 'ATT', x: 0.46, y: 0.62, num: 11 }
+            ];
+
+            formation.forEach((pos, idx) => {
+                const name = teamData.roster[idx] || `Jogador ${pos.num}`;
+                players.push(new Player(teamCode, pos.role, pos.x, pos.y, pos.num, name));
+            });
+
+            return players;
+        }
+
+        window.onload = function() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+
+            canvas.width = PITCH.width;
+            canvas.height = PITCH.height;
+
+            setupUI();
+            setupInputs();
+
+            requestAnimationFrame(gameLoop);
+        };
+
+        function setupUI() {
+            const p1Select = document.getElementById('select-p1-team');
+            const aiSelect = document.getElementById('select-ai-team');
+
+            p1Select.innerHTML = '';
+            aiSelect.innerHTML = '';
+
+            TEAMS_DATA.forEach(t => {
+                p1Select.add(new Option(t.name, t.id));
+                aiSelect.add(new Option(t.name, t.id));
+            });
+
+            p1Select.selectedIndex = 0;
+            aiSelect.selectedIndex = 1;
+
+            p1Select.addEventListener('change', updateRosterPreviews);
+            aiSelect.addEventListener('change', updateRosterPreviews);
+
+            updateRosterPreviews();
+
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.onclick = () => {
+                    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentDifficulty = btn.getAttribute('data-diff');
+                };
+            });
+
+            document.getElementById('btn-main-play').onclick = () => {
+                AudioSys.init();
+                isCareerMode = false;
+                document.getElementById('ai-team-card').style.display = 'block';
+                showScreen('screen-select');
+            };
+
+            document.getElementById('btn-main-career').onclick = () => {
+                AudioSys.init();
+                isCareerMode = true;
+                if (!careerUserTeamId || careerTable.length === 0) {
+                    document.getElementById('ai-team-card').style.display = 'none';
+                    showScreen('screen-select');
+                } else {
+                    showCareerScreen();
+                }
+            };
+
+            document.getElementById('btn-back-menu').onclick = () => {
+                showScreen('screen-menu');
+            };
+
+            document.getElementById('btn-start-match').onclick = () => {
+                const p1Id = p1Select.value;
+                const aiId = aiSelect.value;
+
+                if (!isCareerMode && p1Id === aiId) {
+                    alert("Os dois times precisam ser diferentes! Escolha clubes distintos.");
+                    return;
+                }
+
+                if (isCareerMode) {
+                    initNewCareer(p1Id);
+                    showCareerScreen();
+                } else {
+                    p1TeamData = TEAMS_DATA.find(t => t.id === p1Id);
+                    aiTeamData = TEAMS_DATA.find(t => t.id === aiId);
+                    matchDurationMinutes = parseInt(document.getElementById('select-duration').value);
+                    startNewMatch();
+                }
+            };
+
+            document.getElementById('btn-career-play').onclick = () => {
+                startCareerMatch();
+            };
+
+            document.getElementById('btn-career-reset').onclick = () => {
+                careerUserTeamId = null;
+                document.getElementById('ai-team-card').style.display = 'none';
+                showScreen('screen-select');
+            };
+
+            document.getElementById('btn-career-menu').onclick = () => {
+                showScreen('screen-menu');
+            };
+
+            document.getElementById('pause-btn-top').onclick = togglePause;
+            document.getElementById('btn-resume').onclick = togglePause;
+            document.getElementById('btn-restart').onclick = () => {
+                hideModal('modal-pause');
+                startNewMatch();
+            };
+            document.getElementById('btn-exit-select').onclick = () => {
+                hideModal('modal-pause');
+                if (isCareerMode) {
+                    showCareerScreen();
+                } else {
+                    showScreen('screen-select');
+                }
+            };
+
+            document.getElementById('btn-play-again').onclick = () => {
+                hideModal('modal-gameover');
+                if (isCareerMode) {
+                    showCareerScreen();
+                } else {
+                    startNewMatch();
+                }
+            };
+            document.getElementById('btn-over-teams').onclick = () => {
+                hideModal('modal-gameover');
+                if (isCareerMode) {
+                    showCareerScreen();
+                } else {
+                    showScreen('screen-select');
+                }
+            };
+        }
+
+        function updateRosterPreviews() {
+            const p1Id = document.getElementById('select-p1-team').value;
+            const aiId = document.getElementById('select-ai-team').value;
+
+            const t1 = TEAMS_DATA.find(t => t.id === p1Id);
+            const t2 = TEAMS_DATA.find(t => t.id === aiId);
+
+            if (t1) {
+                document.getElementById('p1-roster').innerHTML = t1.roster.join('<br>');
+            }
+            if (t2) {
+                document.getElementById('ai-roster').innerHTML = t2.roster.join('<br>');
+            }
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function showModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function hideModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function initNewCareer(userTeamId) {
+            careerUserTeamId = userTeamId;
+            careerCurrentRound = 1;
+            careerTable = TEAMS_DATA.map(t => ({
+                teamId: t.id,
+                name: t.name,
+                p: 0, j: 0, v: 0, e: 0, d: 0, gp: 0, gc: 0, sg: 0
+            }));
+            careerFixtures = generateLeagueFixtures(TEAMS_DATA.map(t => t.id));
+        }
+
+        function generateLeagueFixtures(teams) {
+            const rounds = [];
+            const n = teams.length;
+            const tempTeams = [...teams];
+
+            for (let r = 0; r < (n - 1) * 2; r++) {
+                const roundMatches = [];
+                const isSecondHalf = r >= (n - 1);
+
+                for (let i = 0; i < n / 2; i++) {
+                    let home = tempTeams[i];
+                    let away = tempTeams[n - 1 - i];
+
+                    if (isSecondHalf) {
+                        const swap = home;
+                        home = away;
+                        away = swap;
+                    }
+                    roundMatches.push({ home, away, played: false, homeScore: 0, awayScore: 0 });
+                }
+                rounds.push(roundMatches);
+                tempTeams.splice(1, 0, tempTeams.pop());
+            }
+            return rounds;
+        }
+
+        function getCurrentCareerMatch() {
+            if (!careerFixtures || careerCurrentRound > careerFixtures.length) return null;
+            const currentRoundMatches = careerFixtures[careerCurrentRound - 1];
+            return currentRoundMatches.find(m => m.home === careerUserTeamId || m.away === careerUserTeamId);
+        }
+
+        function showCareerScreen() {
+            sortCareerTable();
+            renderCareerTableUI();
+
+            const nextMatch = getCurrentCareerMatch();
+            const nextMatchBox = document.getElementById('career-next-match-box');
+            const playBtn = document.getElementById('btn-career-play');
+
+            if (careerCurrentRound > 38 || !nextMatch) {
+                document.getElementById('career-round-title').innerText = "CAMPEONATO CONCLUÍDO!";
+                nextMatchBox.innerHTML = `<span style="color:#55ff55; font-size: 1.3rem;">FIM DA TEMPORADA DE 38 RODADAS!</span>`;
+                playBtn.style.display = 'none';
+            } else {
+                document.getElementById('career-round-title').innerText = `Rodada ${careerCurrentRound} de 38`;
+                const homeTeam = TEAMS_DATA.find(t => t.id === nextMatch.home);
+                const awayTeam = TEAMS_DATA.find(t => t.id === nextMatch.away);
+                document.getElementById('career-next-match-text').innerText = `${homeTeam.name} × ${awayTeam.name}`;
+                playBtn.style.display = 'inline-block';
+            }
+
+            showScreen('screen-career');
+        }
+
+        function renderCareerTableUI() {
+            const tbody = document.getElementById('career-table-body');
+            tbody.innerHTML = '';
+
+            careerTable.forEach((row, idx) => {
+                const tr = document.createElement('tr');
+                if (row.teamId === careerUserTeamId) tr.classList.add('user-row');
+
+                tr.innerHTML = `
+                    <td>${idx + 1}º</td>
+                    <td style="text-align: left; padding-left: 10px;">${row.name}</td>
+                    <td><strong>${row.p}</strong></td>
+                    <td>${row.j}</td>
+                    <td>${row.v}</td>
+                    <td>${row.e}</td>
+                    <td>${row.d}</td>
+                    <td>${row.gp}</td>
+                    <td>${row.gc}</td>
+                    <td>${row.sg > 0 ? '+' + row.sg : row.sg}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function sortCareerTable() {
+            careerTable.sort((a, b) => {
+                if (b.p !== a.p) return b.p - a.p;
+                if (b.v !== a.v) return b.v - a.v;
+                if (b.sg !== a.sg) return b.sg - a.sg;
+                return b.gp - a.gp;
+            });
+        }
+
+        function startCareerMatch() {
+            const match = getCurrentCareerMatch();
+            if (!match) return;
+
+            p1TeamData = TEAMS_DATA.find(t => t.id === careerUserTeamId);
+            const opponentId = (match.home === careerUserTeamId) ? match.away : match.home;
+            aiTeamData = TEAMS_DATA.find(t => t.id === opponentId);
+
+            matchDurationMinutes = parseInt(document.getElementById('select-duration').value);
+            startNewMatch();
+        }
+
+        function processCareerRoundResults(userP1Score, userAIScore) {
+            if (!isCareerMode || careerCurrentRound > 38) return;
+
+            const roundMatches = careerFixtures[careerCurrentRound - 1];
+
+            roundMatches.forEach(match => {
+                let homeG, awayG;
+
+                if (match.home === careerUserTeamId || match.away === careerUserTeamId) {
+                    if (match.home === careerUserTeamId) {
+                        homeG = userP1Score;
+                        awayG = userAIScore;
+                    } else {
+                        homeG = userAIScore;
+                        awayG = userP1Score;
+                    }
+                } else {
+                    homeG = Math.floor(Math.random() * 3);
+                    awayG = Math.floor(Math.random() * 3);
+                }
+
+                match.homeScore = homeG;
+                match.awayScore = awayG;
+                match.played = true;
+
+                const homeRow = careerTable.find(r => r.teamId === match.home);
+                const awayRow = careerTable.find(r => r.teamId === match.away);
+
+                homeRow.j++; awayRow.j++;
+                homeRow.gp += homeG; homeRow.gc += awayG;
+                homeRow.sg = homeRow.gp - homeRow.gc;
+                awayRow.gp += awayG; awayRow.gc += homeG;
+                awayRow.sg = awayRow.gp - awayRow.gc;
+
+                if (homeG > awayG) {
+                    homeRow.p += 3; homeRow.v++; awayRow.d++;
+                } else if (awayG > homeG) {
+                    awayRow.p += 3; awayRow.v++; homeRow.d++;
+                } else {
+                    homeRow.p += 1; awayRow.p += 1; homeRow.e++; awayRow.e++;
+                }
+            });
+
+            careerCurrentRound++;
+        }
+
+        function startNewMatch() {
+            p1Score = 0;
+            aiScore = 0;
+            matchTimeRemaining = matchDurationMinutes * 60;
+
+            updateHUD();
+
+            ball = new Ball(PITCH.width / 2, PITCH.height / 2);
+            p1Players = createTeamPlayers('P1');
+            aiPlayers = createTeamPlayers('AI');
+            controlledPlayer = p1Players.find(p => p.role === 'ATT') || p1Players[9];
+
+            if (matchTimerInterval) clearInterval(matchTimerInterval);
+            matchTimerInterval = setInterval(() => {
+                if (gameState === 'PLAYING') {
+                    matchTimeRemaining--;
+                    updateHUD();
+                    if (matchTimeRemaining <= 0) {
+                        endMatch();
+                    }
+                }
+            }, 1000);
+
+            gameState = 'PLAYING';
+            showScreen('screen-game');
+            updateActionButtonsUI();
+            AudioSys.playWhistle();
+        }
+
+        function resetPositionsForKickoff() {
+            ball.x = PITCH.width / 2;
+            ball.y = PITCH.height / 2;
+            ball.vx = 0;
+            ball.vy = 0;
+            ball.owner = null;
+            ball.kicker = null;
+
+            p1Players.forEach(p => { p.x = p.baseX; p.y = p.baseY; p.vx = 0; p.vy = 0; });
+            aiPlayers.forEach(p => { p.x = p.baseX; p.y = p.baseY; p.vx = 0; p.vy = 0; });
+
+            controlledPlayer = p1Players.find(p => p.role === 'ATT') || p1Players[9];
+        }
+
+        function triggerGoal(msg) {
+            gameState = 'GOAL';
+            goalTimer = 120;
+            const banner = document.getElementById('goal-banner');
+            banner.innerText = msg;
+            banner.classList.add('show');
+            AudioSys.playGoal();
+        }
+
+        function updateHUD() {
+            document.getElementById('hud-p1-name').innerText = p1TeamData ? p1TeamData.name.toUpperCase() : 'MEU TIME';
+            document.getElementById('hud-p1-name').style.background = p1TeamData ? p1TeamData.shirtColor : '#0055ff';
+
+            document.getElementById('hud-ai-name').innerText = aiTeamData ? aiTeamData.name.toUpperCase() : 'ADVERSÁRIO';
+            document.getElementById('hud-ai-name').style.background = aiTeamData ? aiTeamData.shirtColor : '#cc0000';
+
+            document.getElementById('hud-score').innerText = `${p1Score} × ${aiScore}`;
+
+            const mins = Math.floor(matchTimeRemaining / 60);
+            const secs = matchTimeRemaining % 60;
+            document.getElementById('timer').innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function togglePause() {
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                showModal('modal-pause');
+            } else if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+                hideModal('modal-pause');
+            }
+        }
+
+        function endMatch() {
+            gameState = 'GAMEOVER';
+            if (matchTimerInterval) clearInterval(matchTimerInterval);
+
+            document.getElementById('gameover-score').innerText = `${p1Score} × ${aiScore}`;
+
+            const winnerText = document.getElementById('gameover-winner');
+            if (p1Score > aiScore) {
+                winnerText.innerText = `VITÓRIA DO ${p1TeamData.name.toUpperCase()}! 🏆`;
+                winnerText.style.color = '#55ff55';
+            } else if (aiScore > p1Score) {
+                winnerText.innerText = `VITÓRIA DO ${aiTeamData.name.toUpperCase()}!`;
+                winnerText.style.color = '#ff5555';
+            } else {
+                winnerText.innerText = 'EMPATE TÁTICO!';
+                winnerText.style.color = '#ffee00';
+            }
+
+            if (isCareerMode) {
+                processCareerRoundResults(p1Score, aiScore);
+            }
+
+            AudioSys.playWhistle();
+            showModal('modal-gameover');
+        }
+
+        function setupInputs() {
+            window.addEventListener('keydown', e => {
+                const k = e.key.toLowerCase();
+                keys[k] = true;
+
+                if (k === 'p' || k === 'escape') {
+                    togglePause();
+                }
+            });
+
+            window.addEventListener('keyup', e => {
+                keys[e.key.toLowerCase()] = false;
+            });
+
+            const bindBtn = (id, keyName) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const start = e => { e.preventDefault(); touchInput[keyName] = true; };
+                const end = e => { e.preventDefault(); touchInput[keyName] = false; };
+                el.addEventListener('touchstart', start);
+                el.addEventListener('touchend', end);
+                el.addEventListener('mousedown', start);
+                el.addEventListener('mouseup', end);
+            };
+
+            bindBtn('btn-up', 'up');
+            bindBtn('btn-down', 'down');
+            bindBtn('btn-left', 'left');
+            bindBtn('btn-right', 'right');
+        }
+
+        function handlePlayerInput() {
+            if (!controlledPlayer || !ball || gameState !== 'PLAYING') return;
+
+            if (!ball.owner && Math.random() < 0.1) {
+                let closest = controlledPlayer;
+                let minDist = Math.hypot(ball.x - controlledPlayer.x, ball.y - controlledPlayer.y);
+
+                p1Players.forEach(p => {
+                    const d = Math.hypot(ball.x - p.x, ball.y - p.y);
+                    if (d < minDist) {
+                        minDist = d;
+                        closest = p;
+                    }
+                });
+                controlledPlayer = closest;
+            }
+
+            let moveX = 0;
+            let moveY = 0;
+
+            if (keys['w'] || keys['arrowup'] || touchInput.up) moveY -= 1;
+            if (keys['s'] || keys['arrowdown'] || touchInput.down) moveY += 1;
+            if (keys['a'] || keys['arrowleft'] || touchInput.left) moveX -= 1;
+            if (keys['d'] || keys['arrowright'] || touchInput.right) moveX += 1;
+
+            const isSprinting = keys['shift'] || keys['shiftleft'] || touchInput.sprint;
+            const currentSpeed = isSprinting ? controlledPlayer.sprintSpeed : controlledPlayer.speed;
+
+            if (moveX !== 0 || moveY !== 0) {
+                const len = Math.hypot(moveX, moveY);
+                controlledPlayer.vx = (moveX / len) * currentSpeed;
+                controlledPlayer.vy = (moveY / len) * currentSpeed;
+            }
+
+            if (ball.owner === controlledPlayer) {
+                const shootKey = keys['j'] || touchInput.shoot;
+                if (shootKey) {
+                    isChargingShoot = true;
+                    shootPower = Math.min(shootPower + 0.4, 14);
+                } else if (isChargingShoot) {
+                    isChargingShoot = false;
+                    const shotTargetX = PITCH.width - PITCH.padding;
+                    const shotTargetY = PITCH.height / 2 + (Math.random() * 80 - 40);
+                    controlledPlayer.shootTowards(shotTargetX, shotTargetY, 6 + shootPower);
+                    shootPower = 0;
+                }
+
+                if (keys['i'] || touchInput.pass) {
+                    keys['i'] = false;
+                    touchInput.pass = false;
+                    controlledPlayer.passToTeammate(false);
+                }
+
+                if (keys['o'] || touchInput.through) {
+                    keys['o'] = false;
+                    touchInput.through = false;
+                    controlledPlayer.passToTeammate(true);
+                }
+            } else {
+                if (keys['k'] || touchInput.tackle) {
+                    keys['k'] = false;
+                    touchInput.tackle = false;
+                    controlledPlayer.tackle();
+                }
+
+                if (keys['l'] || touchInput.slide) {
+                    keys['l'] = false;
+                    touchInput.slide = false;
+                    controlledPlayer.performSlide();
+                }
+
+                if (keys['h'] || touchInput.pressure) {
+                    keys['h'] = false;
+                    touchInput.pressure = false;
+                    highPressureTimer = 180;
+                }
+            }
+
+            if (highPressureTimer > 0) highPressureTimer--;
+        }
+
+        function updateActionButtonsUI() {
+            const container = document.getElementById('action-buttons-group');
+            if (!container || !ball) return;
+
+            const playerHasBall = ball.owner && ball.owner.team === 'P1';
+
+            if (playerHasBall) {
+                container.innerHTML = `
+                    <div class="btn-action btn-shoot" id="btn-shoot">CHUTE<br>[J]</div>
+                    <div class="btn-action btn-pass" id="btn-pass">PASSE<br>[I]</div>
+                    <div class="btn-action btn-through" id="btn-through">ENFIADA<br>[O]</div>
+                    <div class="btn-action btn-sprint" id="btn-sprint">CORRER<br>[SHIFT]</div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="btn-action btn-shoot" id="btn-tackle">BOTE<br>[K]</div>
+                    <div class="btn-action btn-pass" id="btn-slide">CARRINHO<br>[L]</div>
+                    <div class="btn-action btn-through" id="btn-pressure">PRESSÃO<br>[H]</div>
+                    <div class="btn-action btn-sprint" id="btn-sprint">CORRER<br>[SHIFT]</div>
+                `;
+            }
+
+            const bindDynamic = (id, action) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const start = e => { e.preventDefault(); action(true); };
+                const end = e => { e.preventDefault(); action(false); };
+                el.addEventListener('touchstart', start);
+                el.addEventListener('touchend', end);
+                el.addEventListener('mousedown', start);
+                el.addEventListener('mouseup', end);
+            };
+
+            if (playerHasBall) {
+                bindDynamic('btn-shoot', v => touchInput.shoot = v);
+                bindDynamic('btn-pass', v => touchInput.pass = v);
+                bindDynamic('btn-through', v => touchInput.through = v);
+            } else {
+                bindDynamic('btn-tackle', v => touchInput.tackle = v);
+                bindDynamic('btn-slide', v => touchInput.slide = v);
+                bindDynamic('btn-pressure', v => touchInput.pressure = v);
+            }
+            bindDynamic('btn-sprint', v => touchInput.sprint = v);
+        }
+
+        function renderPitch() {
+            ctx.fillStyle = '#2e8b57';
+            ctx.fillRect(0, 0, PITCH.width, PITCH.height);
+
+            ctx.fillStyle = '#267347';
+            const stripeWidth = 60;
+            for (let x = PITCH.padding; x < PITCH.width - PITCH.padding; x += stripeWidth * 2) {
+                ctx.fillRect(x, PITCH.padding, stripeWidth, PITCH.height - (PITCH.padding * 2));
+            }
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+
+            ctx.strokeRect(PITCH.padding, PITCH.padding, PITCH.width - (PITCH.padding * 2), PITCH.height - (PITCH.padding * 2));
+
+            ctx.beginPath();
+            ctx.moveTo(PITCH.width / 2, PITCH.padding);
+            ctx.lineTo(PITCH.width / 2, PITCH.height - PITCH.padding);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(PITCH.width / 2, PITCH.height / 2, 70, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(PITCH.width / 2, PITCH.height / 2, 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+
+            const boxH = 220;
+            const boxW = 120;
+            ctx.strokeRect(PITCH.padding, (PITCH.height - boxH) / 2, boxW, boxH);
+            ctx.strokeRect(PITCH.width - PITCH.padding - boxW, (PITCH.height - boxH) / 2, boxW, boxH);
+
+            const goalTop = (PITCH.height - PITCH.goalHeight) / 2;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+            ctx.strokeStyle = '#cccccc';
+            ctx.lineWidth = 2;
+
+            ctx.fillRect(PITCH.padding - 20, goalTop, 20, PITCH.goalHeight);
+            ctx.strokeRect(PITCH.padding - 20, goalTop, 20, PITCH.goalHeight);
+
+            ctx.fillRect(PITCH.width - PITCH.padding, goalTop, 20, PITCH.goalHeight);
+            ctx.strokeRect(PITCH.width - PITCH.padding, goalTop, 20, PITCH.goalHeight);
+        }
+
+        let lastBallOwnerState = null;
+
+        function gameLoop() {
+            if (gameState === 'PLAYING') {
+                if (ball) {
+                    handlePlayerInput();
+
+                    ball.update();
+                    p1Players.forEach(p => p && p.update && p.update());
+                    aiPlayers.forEach(p => p && p.update && p.update());
+
+                    if (!ball.owner) {
+                        [...p1Players, ...aiPlayers].forEach(p => {
+                            if (ball.kickCooldown > 0 && ball.kicker === p) return;
+                            const dist = Math.hypot(ball.x - p.x, ball.y - p.y);
+                            if (dist < 14) {
+                                ball.owner = p;
+                                if (p.team === 'P1') controlledPlayer = p;
+                            }
+                        });
+                    }
+
+                    const currentOwnerState = ball.owner ? ball.owner.team : 'NONE';
+                    if (currentOwnerState !== lastBallOwnerState) {
+                        updateActionButtonsUI();
+                        lastBallOwnerState = currentOwnerState;
+                    }
+                }
+            } else if (gameState === 'GOAL') {
+                goalTimer--;
+                if (goalTimer <= 0) {
+                    document.getElementById('goal-banner').classList.remove('show');
+                    resetPositionsForKickoff();
+                    gameState = 'PLAYING';
+                }
+            }
+
+            ctx.clearRect(0, 0, PITCH.width, PITCH.height);
+            renderPitch();
+
+            p1Players.forEach(p => p && p.draw && p.draw(ctx));
+            aiPlayers.forEach(p => p && p.draw && p.draw(ctx));
+            if (ball) ball.draw(ctx);
+
+            if (isChargingShoot && controlledPlayer) {
+                const barW = 40;
+                const barH = 6;
+                const px = controlledPlayer.x - barW / 2;
+                const py = controlledPlayer.y + 18;
+
+                ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                ctx.fillRect(px, py, barW, barH);
+
+                const fillRatio = shootPower / 14;
+                ctx.fillStyle = fillRatio > 0.8 ? '#ff3333' : '#ffee00';
+                ctx.fillRect(px, py, barW * fillRatio, barH);
+
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(px, py, barW, barH);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+    </script>
+</body>
+</html>
